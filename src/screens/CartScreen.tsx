@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import {
 	FlatList,
 	Modal,
@@ -8,40 +8,19 @@ import {
 	View,
 } from 'react-native'
 import { Product } from '../types/product'
-
-type CartItem = Product & { quantity: number }
+import { useDispatch, useSelector } from 'react-redux'
+import { RootState } from '../store/store'
+import { updateQuantity, setCheckoutVisible, clearCart } from '../store/cartSlice'
 
 type CartScreenProps = {
-	route: {
-		params: {
-			item?: CartItem
-		}
-	}
 	navigation: any
 }
 
-export const CartScreen: React.FC<CartScreenProps> = ({ route, navigation }) => {
-	const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-		const newItem = route.params?.item
-		return newItem ? [newItem] : []
-	})
-	const [isCheckoutVisible, setIsCheckoutVisible] = useState(false)
-
-	const updateQuantity = (itemId: number, increment: boolean) => {
-		setCartItems(prevItems =>
-			prevItems.map(item =>
-				item.id === itemId
-					? {
-						...item,
-						quantity: increment
-							? item.quantity + 1
-							: Math.max(0, item.quantity - 1),
-					}
-					: item,
-			),
-		)
-		setCartItems(prevItems => prevItems.filter(item => item.quantity > 0))
-	}
+export const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
+	const dispatch = useDispatch()
+	const { items: cartItems, isCheckoutVisible } = useSelector(
+		(state: RootState) => state.cart,
+	)
 
 	const calculateTotal = () => {
 		return cartItems
@@ -50,11 +29,16 @@ export const CartScreen: React.FC<CartScreenProps> = ({ route, navigation }) => 
 	}
 
 	const handleCheckout = () => {
-		// Implement checkout logic here
-		setIsCheckoutVisible(true)
+		dispatch(setCheckoutVisible(true))
 	}
 
-	const renderItem = ({ item }: { item: CartItem }) => (
+	const handleConfirmOrder = () => {
+		dispatch(setCheckoutVisible(false))
+		dispatch(clearCart())
+		navigation.navigate('ProductList')
+	}
+
+	const renderItem = ({ item }: { item: Product & { quantity: number } }) => (
 		<View style={styles.cartItem}>
 			<View style={styles.itemInfo}>
 				<Text style={styles.itemTitle}>{item.title}</Text>
@@ -63,13 +47,17 @@ export const CartScreen: React.FC<CartScreenProps> = ({ route, navigation }) => 
 			<View style={styles.quantityControls}>
 				<TouchableOpacity
 					style={styles.quantityButton}
-					onPress={() => updateQuantity(item.id, false)}>
+					onPress={() =>
+						dispatch(updateQuantity({ itemId: item.id, increment: false }))
+					}>
 					<Text style={styles.quantityButtonText}>-</Text>
 				</TouchableOpacity>
 				<Text style={styles.quantity}>{item.quantity}</Text>
 				<TouchableOpacity
 					style={styles.quantityButton}
-					onPress={() => updateQuantity(item.id, true)}>
+					onPress={() =>
+						dispatch(updateQuantity({ itemId: item.id, increment: true }))
+					}>
 					<Text style={styles.quantityButtonText}>+</Text>
 				</TouchableOpacity>
 			</View>
@@ -117,16 +105,12 @@ export const CartScreen: React.FC<CartScreenProps> = ({ route, navigation }) => 
 						</Text>
 						<TouchableOpacity
 							style={styles.confirmButton}
-							onPress={() => {
-								setIsCheckoutVisible(false)
-								setCartItems([])
-								navigation.navigate('ProductList')
-							}}>
+							onPress={handleConfirmOrder}>
 							<Text style={styles.confirmButtonText}>Confirm Order</Text>
 						</TouchableOpacity>
 						<TouchableOpacity
 							style={styles.cancelButton}
-							onPress={() => setIsCheckoutVisible(false)}>
+							onPress={() => dispatch(setCheckoutVisible(false))}>
 							<Text style={styles.cancelButtonText}>Cancel</Text>
 						</TouchableOpacity>
 					</View>

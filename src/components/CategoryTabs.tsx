@@ -48,7 +48,9 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 16,
 		paddingVertical: 8,
 		marginHorizontal: 4,
+		marginBottom: 4,
 		borderRadius: 20,
+		minHeight: 32,
 		backgroundColor: '#f0f0f0',
 	},
 	selectedTab: {
@@ -56,6 +58,7 @@ const styles = StyleSheet.create({
 	},
 	tabText: {
 		fontSize: 14,
+		lineHeight: 16,
 		color: '#666',
 	},
 	selectedTabText: {

@@ -6,8 +6,11 @@ import {
 	Text,
 	TouchableOpacity,
 	View,
+	ActivityIndicator,
 } from 'react-native'
 import { Product } from '../types/product'
+import { useDispatch } from 'react-redux'
+import { addToCart } from '../store/cartSlice'
 
 type ProductDetailsScreenProps = {
 	route: {
@@ -24,11 +27,12 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
 }) => {
 	const { product } = route.params
 	const [quantity, setQuantity] = useState(1)
+	const [imageLoading, setImageLoading] = useState(true)
+	const dispatch = useDispatch()
 
 	const handleAddToCart = () => {
-		navigation.navigate('Cart', {
-			item: { ...product, quantity },
-		})
+		dispatch(addToCart({ ...product, quantity }))
+		navigation.navigate('Cart')
 	}
 
 	const handleQuantityChange = (increment: boolean) => {
@@ -37,7 +41,20 @@ export const ProductDetailsScreen: React.FC<ProductDetailsScreenProps> = ({
 
 	return (
 		<ScrollView style={styles.container}>
-			<Image source={{ uri: product.image }} style={styles.image} />
+			<View style={styles.imageContainer}>
+				<Image
+					source={{ uri: product.images[0] }}
+					style={styles.image}
+					onLoadStart={() => setImageLoading(true)}
+					onLoadEnd={() => setImageLoading(false)}
+					loadingIndicatorSource={require('../../src/assets/placeholder.png')}
+				/>
+				{imageLoading && (
+					<View style={styles.loadingOverlay}>
+						<ActivityIndicator size="large" color="#2196F3" />
+					</View>
+				)}
+			</View>
 			<View style={styles.content}>
 				<Text style={styles.title}>{product.title}</Text>
 				<Text style={styles.price}>${product.price.toFixed(2)}</Text>
@@ -71,10 +88,25 @@ const styles = StyleSheet.create({
 		flex: 1,
 		backgroundColor: '#fff',
 	},
-	image: {
+	imageContainer: {
+		position: 'relative',
 		width: '100%',
 		height: 300,
+	},
+	image: {
+		width: '100%',
+		height: '100%',
 		resizeMode: 'cover',
+	},
+	loadingOverlay: {
+		position: 'absolute',
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		backgroundColor: 'rgba(255, 255, 255, 0.8)',
+		justifyContent: 'center',
+		alignItems: 'center',
 	},
 	content: {
 		padding: 16,
